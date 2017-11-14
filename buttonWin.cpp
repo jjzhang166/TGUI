@@ -6,13 +6,12 @@ buttonWin::buttonWin(
 			uint16_t winWidth,
 			uint16_t winHigh,
 			char* name,
-			uint8_t wsStyle,
 			rootWin* parent,
-			xQueueHandle queue,
-			uint32_t winColor
-):controlWin(winXpos,winYpos,winWidth,winHigh,name,wsStyle,parent,queue)
+			xQueueHandle queue
+):controlWin(winXpos,winYpos,winWidth,winHigh,name,parent,queue)
 {
-	this->winColor = winColor;
+	setTextColor(BLACK);
+	setTextColor(WHITE);
 }
 
 buttonWin::~buttonWin()
@@ -22,39 +21,63 @@ buttonWin::~buttonWin()
 
 //绘画 就自己 不同的窗口实现不同
 void buttonWin::paintWin()
-{
-	LCD_SetColors(winColor,winColor);
+{	
+	LCD_SetColors(getBackColor(),getBackColor());
 	LCD_DrawFullRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+	LCD_SetColors(getTextColor(),getTextColor());
+	LCD_DrawRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+	displayStrCenter(getFont(),getTextColor(),getBackColor(),getWinName());
 }
 
 //按钮失焦
-void defocusButton()
+void buttonWin::defocusButton()
 {
 	//绘画成纯灰色
+	LCD_SetColors(GREY,GREY);
+	LCD_DrawFullRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+	LCD_SetColors(getTextColor(),getTextColor());
+	LCD_DrawRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+	displayStrCenter(getFont(),BLACK,GREY,getWinName());
 }
+
 //按钮按下
 void buttonWin::pressButton()
 {
-	LCD_SetColors(WHITE,WHITE);
-	LCD_DrawFullRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+	if(!isWinSelected())//之前未被选中 改为选中
+	{
+		LCD_SetColors(WHITE,WHITE);
+		LCD_DrawFullRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+		LCD_SetColors(getTextColor(),getTextColor());
+		LCD_DrawRect(getAbsoluteX(),getAbsoluteY(),getWinWidth(),getWinHigh());
+		displayStrCenter(getFont(),getTextColor(),WHITE,getWinName());	
+		changSelectedStat();		
+	}
 }
+
 
 //按钮释放
 void buttonWin::releaseButton()
 {
-	//重绘
-	paintWin();
+	if(isWinSelected())//若之前选中 改为未选中
+	{
+		paintAll();
+		changSelectedStat();
+	}
 }
 
 //激活控件--注册 中间会调用createWin（） 其他根据不同的窗口变化
 void buttonWin::registerWin()
 {
-	this->createWin();
-	this->setAbsoluteXY();
+	rootWin::registerWin();
 }
 
 //注销控件  会调用destroy（）窗口 其他会根据不同窗口变化
 void buttonWin::unregisterWin()
 {
-	this->destroyWin();
+	rootWin::unregisterWin();
+}
+
+void buttonWin::destroyWin()
+{
+	rootWin::destroyWin();
 }
